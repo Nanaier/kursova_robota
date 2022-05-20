@@ -1,6 +1,7 @@
 from board import *
 from button import *
 from grid import *
+import os
 vector = pygame.math.Vector2
 
 class Screen:
@@ -13,7 +14,6 @@ class Screen:
         self.x = 410
         self.y = 100
         self.hint_amn = 0
-
 
     @staticmethod
     def get_font(size):
@@ -87,12 +87,62 @@ class Screen:
                     if PLAY_BACK.checkForInput(PLAY_MOUSE_POS):
                         Screen.main_menu(self)
             pygame.display.update()
+    def codeToBoard(self, code):
+        board = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ]
+        for row in range(9):
+            for col in range(9):
+                board[row][col] = int(code[0])
+                code = code[1:]
+        return board
+    def empty_code_list(self):
+        board = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ]
+        code = []
+        for row in range(4):
+            code.append(board)
+        return code
 
+    def mode_play(self, mode, bool):
+        if bool == False:
+            Brd = Board()
+            code = Brd.generateQuestionBoardCode(mode)
+            self.grid = Grid(self.SCREEN, code, self.x, self.y)
+        else:
+            code = self.empty_code_list()
+            with open("input.txt", "r") as file:
+                l = file.readlines()
+                code[2] = self.codeToBoard(l[0])
+                code[3] = self.codeToBoard(l[1])
 
-    def mode_play(self, mode):
-        Brd = Board()
-        code = Brd.generateQuestionBoardCode(mode)
-        self.grid = Grid(self.SCREEN, code, self.x, self.y)
+            with open("output.txt", "r") as file:
+
+                l = file.readlines()
+
+                cd = self.codeToBoard(l[0])
+                self.hint_amn = int(l[2])
+                # self.grid.hint_amount = l[2]
+            self.grid = Grid(self.SCREEN, code, self.x, self.y, self.hint_amn)
+            code[2] = cd
+
         self.hint_cells = []
         self.notCompletedCells = []
         while True:
@@ -107,7 +157,9 @@ class Screen:
             self.grid.hint(SCREEN, self.hint_cells)
             if self.selected:
                 self.grid.highlightCells(self.SCREEN, self.selected, SHADE)
+
             self.grid.drawNumbers(self.SCREEN, code[2])
+
 
             pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(90, 150, 240, 100))
             SOLVE_BUTTON = Button(pos=(210, 200),
@@ -115,11 +167,14 @@ class Screen:
             pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(90, 350, 240, 100))
             HINT_BUTTON = Button(pos=(210, 400),
                                  text_input="HINT", font=Screen.get_font(45), base_color=BEIGE, hovering_color="White")
-            pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(930, 250, 240, 100))
-            CHECK_BUTTON = Button(pos=(1050, 300),
+            pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(930, 150, 240, 100))
+            CHECK_BUTTON = Button(pos=(1050, 200),
                                  text_input="CHECK", font=Screen.get_font(45), base_color=BEIGE, hovering_color="White")
+            pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(930, 350, 240, 100))
+            SAVE_AND_QUIT_BUTTON = Button(pos=(1050, 400),
+                                 text_input="SAVE", font=Screen.get_font(45), base_color=BEIGE, hovering_color="White")
 
-            for button in [SOLVE_BUTTON, HINT_BUTTON, CHECK_BUTTON]:
+            for button in [SOLVE_BUTTON, HINT_BUTTON, CHECK_BUTTON, SAVE_AND_QUIT_BUTTON]:
                 button.changeColor(play_mouse_pos)
                 button.update(self.SCREEN)
             for event in pygame.event.get():
@@ -131,6 +186,8 @@ class Screen:
                         Screen.main_menu(self)
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if SOLVE_BUTTON.checkForInput(play_mouse_pos):
+                        with open("output.txt", "w") as file:
+                            file.truncate()
                         Screen.solve_button(self, mode, code)
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -141,7 +198,7 @@ class Screen:
                         self.selected = None
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if HINT_BUTTON.checkForInput(play_mouse_pos) and self.grid.hint_amount<3:
-                        self.hint_cells.append(self.grid.notUsed(code[2]))
+                        self.hint_cells.append(self.grid.solve(code[2]))
                         self.hint_amn = self.grid.hint_amount
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -150,16 +207,22 @@ class Screen:
                             self.notCompletedCells = self.grid.notComplettedCells(code[2])
 
                         else:
+                            with open("output.txt", "w") as file:
+                                file.truncate()
                             Screen.finish_display(self, mode, code)
-
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if SAVE_AND_QUIT_BUTTON.checkForInput(play_mouse_pos):
+                        with open("output.txt", "w") as file:
+                            file.write(self.grid.boardToCode(code[2]) + '\n' + mode + '\n' + str(self.hint_amn))
                 if event.type == pygame.KEYDOWN:
                     if self.selected != None and self.selected not in self.grid.lockedCells:
                         if self.isInteger(event.unicode):
+
                             code[2][self.selected[1]][self.selected[0]] = int(event.unicode)
 
             self.grid.draw_grid()
             self.print_text(mode, (440, 90), 10)
-            self.print_text(str(self.grid.hint_amount) + "/3", (840, 90), 10)
+            self.print_text(str(self.hint_amn) + "/3", (840, 90), 10)
             pygame.display.update()
 
     def isInteger(self, str):
@@ -202,13 +265,13 @@ class Screen:
                         Screen.main_menu(self)
                     if PLAY_EASY.checkForInput(play_mouse_pos):
                         mode = "easy"
-                        Screen.mode_play(self, mode)
+                        Screen.mode_play(self, mode, False)
                     if PLAY_MEDIUM.checkForInput(play_mouse_pos):
                         mode = "medium"
-                        Screen.mode_play(self, mode)
+                        Screen.mode_play(self, mode, False)
                     if PLAY_HARD.checkForInput(play_mouse_pos):
                         mode = "hard"
-                        Screen.mode_play(self, mode)
+                        Screen.mode_play(self, mode, False)
             pygame.display.update()
 
     def main_menu(self):
@@ -217,25 +280,60 @@ class Screen:
             self.SCREEN.fill(BEIGE)
             menu_mouse_pos = pygame.mouse.get_pos()
             self.print_text("SUDOKU", (640, 160), 150)
-            pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(370, 310, 520, 170))
-            pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(460, 500, 350, 100))
-            PLAY_BUTTON = Button(pos=(640, 400),
-                                 text_input="PLAY", font=Screen.get_font(120), base_color=BEIGE, hovering_color="White")
-            QUIT_BUTTON = Button(pos=(640, 550),
-                                 text_input="QUIT", font=Screen.get_font(75), base_color=BEIGE, hovering_color="White")
-            for button in [PLAY_BUTTON, QUIT_BUTTON]:
-                button.changeColor(menu_mouse_pos)
-                button.update(self.SCREEN)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if PLAY_BUTTON.checkForInput(menu_mouse_pos):
-                        Screen.play(self)
-                    if QUIT_BUTTON.checkForInput(menu_mouse_pos):
+            if os.stat("output.txt").st_size == 0:
+                pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(370, 310, 520, 170))
+                pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(460, 500, 350, 100))
+                PLAY_BUTTON = Button(pos=(640, 400),
+                                     text_input="PLAY", font=Screen.get_font(120), base_color=BEIGE, hovering_color="White")
+                QUIT_BUTTON = Button(pos=(640, 550),
+                                     text_input="QUIT", font=Screen.get_font(75), base_color=BEIGE, hovering_color="White")
+                for button in [PLAY_BUTTON, QUIT_BUTTON]:
+                    button.changeColor(menu_mouse_pos)
+                    button.update(self.SCREEN)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
                         pygame.quit()
                         sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if PLAY_BUTTON.checkForInput(menu_mouse_pos):
+                            Screen.play(self)
+                        if QUIT_BUTTON.checkForInput(menu_mouse_pos):
+                            pygame.quit()
+                            sys.exit()
+            else:
+                pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(370, 260, 520, 170))
+                pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(460, 600, 350, 100))
+                pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(380, 460, 500, 110))
+                PLAY_BUTTON = Button(pos=(640, 350),
+                                     text_input="PLAY", font=Screen.get_font(120), base_color=BEIGE, hovering_color="White")
+                RESUME_BUTTON = Button(pos=(640, 520),
+                                     text_input="RESUME", font=Screen.get_font(80), base_color=BEIGE, hovering_color="White")
+                QUIT_BUTTON = Button(pos=(640, 650),
+                                     text_input="QUIT", font=Screen.get_font(75), base_color=BEIGE, hovering_color="White")
+                for button in [PLAY_BUTTON, RESUME_BUTTON, QUIT_BUTTON]:
+                    button.changeColor(menu_mouse_pos)
+                    button.update(self.SCREEN)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if RESUME_BUTTON.checkForInput(menu_mouse_pos):
+                             with open('output.txt', "r") as file:
+                                l = file.readlines()
+                                lst = []
+                                for i in range(len(l)):
+                                    lst.append(l[i].strip('\n'))
+                                mode = str(lst[1])
+                             Screen.mode_play(self, mode, True)
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if PLAY_BUTTON.checkForInput(menu_mouse_pos):
+                            Screen.play(self)
+                        if QUIT_BUTTON.checkForInput(menu_mouse_pos):
+                            pygame.quit()
+                            sys.exit()
             pygame.display.update()
 
 

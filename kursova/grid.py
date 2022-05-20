@@ -1,8 +1,9 @@
 import pygame, sys, random, copy, functools
 from constants import BLUISH, BEIGE, GOLDEN, DARK_BEIGE, SHADE
 
+
 class Grid:
-    def __init__(self, SCREEN, numbers, x, y):
+    def __init__(self, SCREEN, numbers, x, y, hint_amount =0):
         self.SCREEN = SCREEN
         self.x = x
         self.y = y
@@ -13,73 +14,126 @@ class Grid:
         self.solvedCells = []
         self.solvedGrid = numbers[3]
         self.unsolvedGrid = numbers[2]
-        self.hint_amount = 0
+        self.hint_amount = hint_amount
         self.notCompletedCells = []
         self.lock()
-
+        self.fileInput()
 
 
     def draw_grid(self):
         pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(self.x, self.y, self.height, self.width), 2)
 
         for x in range(self.x + self.step, self.x + self.width - self.step + 1, self.step):
-            if x == self.x + 3*self.step or x == self.x + self.width - 3*self.step:
+            if x == self.x + 3 * self.step or x == self.x + self.width - 3 * self.step:
                 pygame.draw.line(self.SCREEN, BLUISH, (x, self.y), (x, self.y + self.height - 1), 2)
             else:
                 pygame.draw.line(self.SCREEN, BLUISH, (x, self.y), (x, self.y + self.height - 1), 1)
         for y in range(self.y + self.step, self.y + self.height - self.step + 1, self.step):
-            if y == self.y + 3*self.step or y == self.y + self.height - 3*self.step:
+            if y == self.y + 3 * self.step or y == self.y + self.height - 3 * self.step:
                 pygame.draw.line(self.SCREEN, BLUISH, (self.x, y), (self.x + self.width - 1, y), 2)
             else:
                 pygame.draw.line(self.SCREEN, BLUISH, (self.x, y), (self.x + self.width - 1, y), 1)
 
     def isOnTheGrid(self, MOUSE_POS):
         if MOUSE_POS[0] in range(self.x, self.x + self.width) and MOUSE_POS[1] in range(self.y, self.y + self.height):
-            return ([(MOUSE_POS[0] - self.x)//self.step, (MOUSE_POS[1] - self.y)//self.step])
+            return ([(MOUSE_POS[0] - self.x) // self.step, (MOUSE_POS[1] - self.y) // self.step])
         return False
 
     def highlightCells(self, SCREEN, position, color):
-        pygame.draw.rect(SCREEN, color, ((position[0]*self.step) + self.x , (position[1]*self.step) + self.y, self.step, self.step))
+        pygame.draw.rect(SCREEN, color,
+                         ((position[0] * self.step) + self.x, (position[1] * self.step) + self.y, self.step, self.step))
 
     def lock(self):
         for yidx, row in enumerate(self.unsolvedGrid):
             for xidx, num in enumerate(row):
-                if num!=0:
+                if num != 0:
                     self.lockedCells.append([xidx, yidx])
                 else:
                     self.solvedCells.append([xidx, yidx])
+
+    def fileInput(self):
+        code = self.boardToCode(self.unsolvedGrid)
+        cd = self.boardToCode(self.solvedGrid)
+        with open("input.txt", "w") as file:
+            file.write(code + '\n' + cd)
+
+    def boardToCode(self, brd):
+        code = ''
+        for row in range(9):
+            for col in range(9):
+                code += str(brd[row][col])
+        return code
+
+
 
     def notComplettedCells(self, code):
         self.notCompletedCells = []
         for yidx, row in enumerate(code):
             for xidx, num in enumerate(row):
-                if num==0:
+                if num == 0:
                     self.notCompletedCells.append([xidx, yidx])
         return self.notCompletedCells
 
+    def checkSpace(self, num, space, board):
+        if not board[space[0]][space[1]] == 0:
+            return None
+
+        for col in board[space[0]]:
+            if col == num:
+                return None
+
+        for row in range(len(board)):
+            if board[row][space[1]] == num:
+                return None
+
+        _internalBoxRow = space[0] // 3
+        _internalBoxCol = space[1] // 3
+
+        for i in range(3):
+            for j in range(3):
+                if board[i + (_internalBoxRow * 3)][j + (_internalBoxCol * 3)] == num:
+                    return None
+
+        return num
+
+    def solve(self, board):
+        spacesAvailable = self.notComplettedCells(board)
+
+        num_amn = []
+        if len(spacesAvailable) == 0:
+            return None
+        else:
+            for i in range(len(spacesAvailable)):
+                row, col = spacesAvailable[i]
+                for n in range(1, 10):
+                    if self.checkSpace(n, (col, row), board):
+                        num_amn.append(n)
+                if len(num_amn) > 1:
+                    num_amn = []
+                elif len(num_amn) == 1:
+                    board[col][row] = num_amn[0]
+                    self.hint_amount += 1
+                    return [row, col]
+                elif len(num_amn) == 0:
+                    self.hint_amount += 1
+                    return random.choice(spacesAvailable)
 
     def shadeCells(self, SCREEN):
         for cell in self.lockedCells:
-            pygame.draw.rect(SCREEN, SHADE, (cell[0]*self.step + self.x, cell[1]*self.step + self.y, self.step, self.step))
+            pygame.draw.rect(SCREEN, SHADE,
+                             (cell[0] * self.step + self.x, cell[1] * self.step + self.y, self.step, self.step))
 
     def colorCells(self, SCREEN, color, solvedCells):
         for cell in solvedCells:
-            pygame.draw.rect(SCREEN, color, (cell[0]*self.step + self.x, cell[1]*self.step + self.y, self.step, self.step))
+            pygame.draw.rect(SCREEN, color,
+                             (cell[0] * self.step + self.x, cell[1] * self.step + self.y, self.step, self.step))
 
-    def notUsed(self, code):
-        notUsedNumbers = []
-        for yidx, row in enumerate(code):
-            for xidx, num in enumerate(row):
-                if num == 0:
-                    notUsedNumbers.append([xidx, yidx])
-        self.hint_amount += 1
-        return random.choice(notUsedNumbers)
 
     def hint(self, SCREEN, position):
         for pos in position:
             self.unsolvedGrid[pos[1]][pos[0]] = self.solvedGrid[pos[1]][pos[0]]
-            pygame.draw.rect(SCREEN, "#65C793", (pos[0]*self.step + self.x, pos[1]*self.step + self.y, self.step, self.step))
-
+            pygame.draw.rect(SCREEN, "#65C793",
+                             (pos[0] * self.step + self.x, pos[1] * self.step + self.y, self.step, self.step))
 
     def numbers(self, SCREEN, number, position):
         fnt = pygame.font.Font("assets/arial.ttf", 45)
@@ -90,5 +144,5 @@ class Grid:
         for yidx, row in enumerate(code):
             for xidx, num in enumerate(row):
                 if num != 0:
-                    position = [xidx*self.step + self.x + self.step//4, yidx*self.step + self.y]
+                    position = [xidx * self.step + self.x + self.step // 4, yidx * self.step + self.y]
                     self.numbers(SCREEN, str(num), position)
