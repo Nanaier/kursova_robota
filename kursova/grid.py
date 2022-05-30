@@ -64,8 +64,6 @@ class Grid:
                 code += str(brd[row][col])
         return code
 
-
-
     def notComplettedCells(self, code):
         self.notCompletedCells = []
         for yidx, row in enumerate(code):
@@ -75,8 +73,8 @@ class Grid:
         return self.notCompletedCells
 
     def checkSpace(self, num, space, board):
-        if not board[space[0]][space[1]] == 0:
-            return None
+        # if not board[space[0]][space[1]] == 0:
+            # return None
 
         for col in board[space[0]]:
             if col == num:
@@ -98,13 +96,14 @@ class Grid:
 
     def solve(self, board):
         spacesAvailable = self.notComplettedCells(board)
-
         num_amn = []
-        if len(spacesAvailable) == 0:
-            return None
+        if len(self.solvedCells) == 0:
+            rand = random.choice(self.solvedCells)
+            self.hint_amount += 1
+            return rand
         else:
-            for i in range(len(spacesAvailable)):
-                row, col = spacesAvailable[i]
+            for i in range(len(self.solvedCells)):
+                row, col = self.solvedCells[i]
                 for n in range(1, 10):
                     if self.checkSpace(n, (col, row), board):
                         num_amn.append(n)
@@ -113,10 +112,12 @@ class Grid:
                 elif len(num_amn) == 1:
                     board[col][row] = num_amn[0]
                     self.hint_amount += 1
+                    self.solvedCells.remove([row, col])
                     return [row, col]
-                elif len(num_amn) == 0:
+                elif len(num_amn) == 0 and len(self.solvedCells) > 0:
+                    rand = random.choice(self.solvedCells)
                     self.hint_amount += 1
-                    return random.choice(spacesAvailable)
+                    return rand
 
     def shadeCells(self, SCREEN):
         for cell in self.lockedCells:
@@ -128,9 +129,9 @@ class Grid:
             pygame.draw.rect(SCREEN, color,
                              (cell[0] * self.step + self.x, cell[1] * self.step + self.y, self.step, self.step))
 
-
-    def hint(self, SCREEN, position):
+    def hint(self, SCREEN, position, code):
         for pos in position:
+            code[pos[1]][pos[0]] = self.solvedGrid[pos[1]][pos[0]]
             self.unsolvedGrid[pos[1]][pos[0]] = self.solvedGrid[pos[1]][pos[0]]
             pygame.draw.rect(SCREEN, "#65C793",
                              (pos[0] * self.step + self.x, pos[1] * self.step + self.y, self.step, self.step))

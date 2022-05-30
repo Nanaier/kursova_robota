@@ -83,9 +83,9 @@ class Board:
         if difficulty == "easy":
             _squares_to_remove = 36
         elif difficulty == "medium":
-            _squares_to_remove = 44
+            _squares_to_remove = 42
         elif difficulty == "hard":
-            _squares_to_remove = 50
+            _squares_to_remove = 48
         else:
             return
 
