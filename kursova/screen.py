@@ -36,9 +36,7 @@ class Screen:
             SOLVE_BACK.changeColor(mouse_pos)
             self.SCREEN.fill(BEIGE)
             SOLVE_BACK.update(self.SCREEN)
-            #self.grid.shadeCells(self.SCREEN)
-            #self.grid.colorCells(self.SCREEN, "#65C793", self.grid.solvedCells)
-            self.grid.drawNumbers(self.SCREEN, code[3])
+            self.grid.drawNumbers(self.SCREEN, code[1])
             self.grid.draw_grid()
             self.print_text("Solved sudoku:", (640, 60), 50)
             self.print_text(mode, (440, 130), 10)
@@ -62,11 +60,10 @@ class Screen:
                                          hovering_color=GOLDEN)
             FINISH_DISPLAY_BACK.changeColor(mouse_pos)
             FINISH_DISPLAY_BACK.update(self.SCREEN)
-            #self.grid.shadeCells(self.SCREEN)
 
-            self.grid.drawNumbers(self.SCREEN, code[3])
+            self.grid.drawNumbers(self.SCREEN, code[1])
             self.grid.draw_grid()
-            if code[2] == code[3]:
+            if code[0] == code[1]:
                 self.print_text("You've won!", (640, 60), 50)
                 self.print_text("Congratulations!", (340, 250), 35)
                 self.print_text("You used " + str(self.hint_amn) + "/3 hints", (340, 400), 35)
@@ -88,41 +85,6 @@ class Screen:
                         Screen.main_menu(self)
             pygame.display.update()
 
-    def codeToBoard(self, code):
-        board = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-        for row in range(9):
-            for col in range(9):
-                board[row][col] = int(code[0])
-                code = code[1:]
-        return board
-
-    def empty_code_list(self):
-        board = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-        code = []
-        for row in range(4):
-            code.append(board)
-        return code
-
     def mode_play(self, mode, file_insides):
         self.hint_cells = []
         if not file_insides:
@@ -135,8 +97,8 @@ class Screen:
             code = self.empty_code_list()
             with open("input.txt", "r") as file:
                 lst = file.readlines()
-                code[2] = self.codeToBoard(lst[0])
-                code[3] = self.codeToBoard(lst[1])
+                code[0] = self.codeToBoard(lst[0])
+                code[1] = self.codeToBoard(lst[1])
 
             with open("output.txt", "r") as file:
                 lst = file.readlines()
@@ -147,7 +109,7 @@ class Screen:
                 else:
                     self.hint_cells = self.code_to_hint_pos(lst[3])
             self.grid = Grid(self.SCREEN, code, self.x, self.y, self.hint_amn)
-            code[2] = cd
+            code[0] = cd
 
         self.notCompletedCells = []
         while self.running:
@@ -159,11 +121,11 @@ class Screen:
             PLAY_BACK.update(self.SCREEN)
             self.grid.shadeCells(self.SCREEN)
             self.grid.colorCells(self.SCREEN, '#FF6666', self.notCompletedCells)
-            self.grid.hint(self.SCREEN, self.hint_cells, code[2])
+            self.grid.hint(self.SCREEN, self.hint_cells, code[0])
             if self.selected:
                 self.grid.highlightCells(self.SCREEN, self.selected, SHADE)
 
-            self.grid.drawNumbers(self.SCREEN, code[2])
+            self.grid.drawNumbers(self.SCREEN, code[0])
             pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(90, 150, 240, 100))
             SOLVE_BUTTON = Button(pos=(210, 200), text_input="SOLVE", font=Screen.get_font(45), base_color=BEIGE,
                                   hovering_color="White")
@@ -204,13 +166,13 @@ class Screen:
                         self.selected = None
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if HINT_BUTTON.checkForInput(play_mouse_pos) and self.grid.hint_amount < 3:
-                        self.hint_cells.append(self.grid.solve(code[2]))
+                        self.hint_cells.append(self.grid.solve(code[0]))
                         self.hint_amn = self.grid.hint_amount
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if CHECK_BUTTON.checkForInput(play_mouse_pos):
-                        if len(self.grid.notComplettedCells(code[2])) != 0:
-                            self.notCompletedCells = self.grid.notComplettedCells(code[2])
+                        if len(self.grid.notComplettedCells(code[0])) != 0:
+                            self.notCompletedCells = self.grid.notComplettedCells(code[0])
                         else:
                             with open("output.txt", "w") as file:
                                 file.truncate()
@@ -218,11 +180,11 @@ class Screen:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if SAVE_BUTTON.checkForInput(play_mouse_pos):
                         with open("output.txt", "w") as file:
-                            file.write(self.grid.boardToCode(code[2]) + '\n' + mode + '\n' + str(self.hint_amn) + '\n' + self.hint_pos_code())
+                            file.write(self.grid.boardToCode(code[0]) + '\n' + mode + '\n' + str(self.hint_amn) + '\n' + self.hint_pos_code())
                 if event.type == pygame.KEYDOWN:
                     if self.selected is not None and self.selected not in self.grid.lockedCells and self.selected not in self.hint_cells:
                         if event.unicode.isdigit():
-                            code[2][self.selected[1]][self.selected[0]] = int(event.unicode)
+                            code[0][self.selected[1]][self.selected[0]] = int(event.unicode)
 
             self.grid.draw_grid()
             self.print_text(mode, (440, 90), 10)
@@ -318,15 +280,9 @@ class Screen:
                 pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(370, 260, 520, 170))
                 pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(460, 600, 350, 100))
                 pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(380, 460, 500, 110))
-                MAIN_PLAY_BUTTON = Button(pos=(640, 350),
-                                     text_input="PLAY", font=Screen.get_font(120), base_color=BEIGE,
-                                     hovering_color="White")
-                MAIN_RESUME_BUTTON = Button(pos=(640, 520),
-                                       text_input="RESUME", font=Screen.get_font(80), base_color=BEIGE,
-                                       hovering_color="White")
-                MAIN_QUIT_BUTTON = Button(pos=(640, 650),
-                                     text_input="QUIT", font=Screen.get_font(75), base_color=BEIGE,
-                                     hovering_color="White")
+                MAIN_PLAY_BUTTON = Button(pos=(640, 350), text_input="PLAY", font=Screen.get_font(120), base_color=BEIGE, hovering_color="White")
+                MAIN_RESUME_BUTTON = Button(pos=(640, 520), text_input="RESUME", font=Screen.get_font(80), base_color=BEIGE, hovering_color="White")
+                MAIN_QUIT_BUTTON = Button(pos=(640, 650), text_input="QUIT", font=Screen.get_font(75), base_color=BEIGE, hovering_color="White")
                 for button in [MAIN_PLAY_BUTTON, MAIN_RESUME_BUTTON, MAIN_QUIT_BUTTON]:
                     button.changeColor(menu_mouse_pos)
                     button.update(self.SCREEN)
@@ -352,3 +308,39 @@ class Screen:
                             pygame.quit()
                             sys.exit()
             pygame.display.update()
+
+
+    def codeToBoard(self, code):
+        board = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+        for row in range(9):
+            for col in range(9):
+                board[row][col] = int(code[0])
+                code = code[1:]
+        return board
+
+    def empty_code_list(self):
+        board = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+        code = []
+        for row in range(2):
+            code.append(board)
+        return code

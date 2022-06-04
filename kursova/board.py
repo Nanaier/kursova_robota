@@ -3,16 +3,6 @@ class Board:
     def __init__(self, code=None):
         self.__resetBoard()
 
-        '''if code:  # create a board from the code inputted
-            self.code = code
-
-            for row in range(9):
-                for col in range(9):
-                    self.board[row][col] = int(code[0])
-                    code = code[1:]
-        else:
-            self.code = None'''
-
     def boardToCode(self, input_board=None):  # turn a pre-existing board into a code
         if input_board:
             _code = ''.join([str(i) for j in input_board for i in j])
@@ -75,7 +65,7 @@ class Board:
 
     def generateQuestionBoardCode(self, difficulty):
         self.board, _solution_board = self.generateQuestionBoard(self.__generateRandomCompleteBoard(), difficulty)
-        return self.boardToCode(), self.boardToCode(_solution_board), self.board, _solution_board
+        return self.board, _solution_board
 
     def generateQuestionBoard(self, fullBoard, difficulty):  # generates a question board with a certain amount of numbers removed depending on the chosen difficulty
         self.board = copy.deepcopy(fullBoard)
@@ -157,7 +147,6 @@ class Board:
 
         return self.__generateCont()
 
-    @functools.lru_cache(maxsize=None)
     def __generateCont(self):  # uses recursion to finish generating a random board
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
@@ -194,7 +183,6 @@ class Board:
 
         return list(set(_list_of_solutions))
 
-
     def __findSpacesToFindNumberOfSolutions(self, board,
                                             h):  # finds the first empty space it comes across, is used within the findNumberOfSolutions method
         _k = 1
@@ -207,7 +195,6 @@ class Board:
                     _k += 1
 
         return False
-
 
     def __solveToFindNumberOfSolutions(self, row,
                                        col):  # solves the board using recursion, is used within the findNumberOfSolutions method

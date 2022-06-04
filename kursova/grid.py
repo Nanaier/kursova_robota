@@ -11,9 +11,9 @@ class Grid:
         self.width = 450
         self.step = 50
         self.lockedCells = []
-        self.solvedCells = []
-        self.solvedGrid = numbers[3]
-        self.unsolvedGrid = numbers[2]
+        self.startEmptyCells = []
+        self.solvedGrid = numbers[1]
+        self.unsolvedGrid = numbers[0]
         self.hint_amount = hint_amount
         self.notCompletedCells = []
         self.lock()
@@ -49,7 +49,7 @@ class Grid:
                 if num != 0:
                     self.lockedCells.append([xidx, yidx])
                 else:
-                    self.solvedCells.append([xidx, yidx])
+                    self.startEmptyCells.append([xidx, yidx])
 
     def fileInput(self):
         code = self.boardToCode(self.unsolvedGrid)
@@ -95,27 +95,37 @@ class Grid:
         return num
 
     def solve(self, board):
-        spacesAvailable = self.notComplettedCells(board)
+
+        correct_board = []
+        for i in range(9):
+            lst = []
+            for j in range(9):
+                if board[i][j] == self.solvedGrid[i][j]:
+                    lst.append(board[i][j])
+                else:
+                    lst.append(0)
+            correct_board.append(lst)
+
         num_amn = []
-        if len(self.solvedCells) == 0:
-            rand = random.choice(self.solvedCells)
+        if len(self.startEmptyCells) == 0:
+            rand = random.choice(self.startEmptyCells)
             self.hint_amount += 1
             return rand
         else:
-            for i in range(len(self.solvedCells)):
-                row, col = self.solvedCells[i]
+            for i in range(len(self.startEmptyCells)):
+                row, col = self.startEmptyCells[i]
                 for n in range(1, 10):
-                    if self.checkSpace(n, (col, row), board):
+                    if self.checkSpace(n, (col, row), correct_board):
                         num_amn.append(n)
-                if len(num_amn) > 1:
+                if len(num_amn) > 1 or len(num_amn) == 0:
                     num_amn = []
                 elif len(num_amn) == 1:
                     board[col][row] = num_amn[0]
                     self.hint_amount += 1
-                    self.solvedCells.remove([row, col])
+                    self.startEmptyCells.remove([row, col])
                     return [row, col]
-                elif len(num_amn) == 0 and len(self.solvedCells) > 0:
-                    rand = random.choice(self.solvedCells)
+                elif len(num_amn) == 0 and len(self.startEmptyCells) > 0:
+                    rand = random.choice(self.startEmptyCells)
                     self.hint_amount += 1
                     return rand
 
