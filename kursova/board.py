@@ -1,4 +1,6 @@
-import pygame, sys, random, copy, functools
+import random, copy
+
+
 class Board:
     def __init__(self, code=None):
         self.__resetBoard()
@@ -48,7 +50,6 @@ class Board:
             return True
         else:
             row, col = _spacesAvailable
-
         for n in range(1, 10):
             if self.checkSpace(n, (row, col)):
                 self.board[row][col] = n
@@ -60,10 +61,10 @@ class Board:
 
         return False
 
-    def solveForCode(self):  # solves a board and returns the code of the solved board
-        return self.boardToCode(self.solve())
+    '''def solveForCode(self):  # solves a board and returns the code of the solved board
+        return self.boardToCode(self.solve())'''
 
-    def generateQuestionBoardCode(self, difficulty):
+    def generateQuestionBoards(self, difficulty):
         self.board, _solution_board = self.generateQuestionBoard(self.__generateRandomCompleteBoard(), difficulty)
         return self.board, _solution_board
 
@@ -184,12 +185,12 @@ class Board:
         return list(set(_list_of_solutions))
 
     def __findSpacesToFindNumberOfSolutions(self, board,
-                                            h):  # finds the first empty space it comes across, is used within the findNumberOfSolutions method
+                                            num):  # finds the first empty space it comes across, is used within the findNumberOfSolutions method
         _k = 1
         for row in range(len(board)):
             for col in range(len(board[row])):
                 if board[row][col] == 0:
-                    if _k == h:
+                    if _k == num:
                         return (row, col)
 
                     _k += 1
@@ -210,16 +211,5 @@ class Board:
         return False
 
     def __resetBoard(self):  # resets the board to an empty state
-        self.board = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-
+        self.board = [[0 for _ in range(9)] for _ in range(9)]
         return self.board

@@ -1,9 +1,9 @@
-import pygame, sys, random, copy, functools
-from constants import BLUISH, BEIGE, GOLDEN, DARK_BEIGE, SHADE
+import pygame, random
+from constants import BLUISH, BEIGE, GOLDEN, SHADE
 
 
 class Grid:
-    def __init__(self, SCREEN, numbers, x, y, hint_amount =0):
+    def __init__(self, SCREEN, numbers, x, y, hint_amount=0):
         self.SCREEN = SCREEN
         self.x = x
         self.y = y
@@ -18,7 +18,6 @@ class Grid:
         self.notCompletedCells = []
         self.lock()
         self.fileInput()
-
 
     def draw_grid(self):
         pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(self.x, self.y, self.height, self.width), 2)
@@ -36,7 +35,7 @@ class Grid:
 
     def isOnTheGrid(self, MOUSE_POS):
         if MOUSE_POS[0] in range(self.x, self.x + self.width) and MOUSE_POS[1] in range(self.y, self.y + self.height):
-            return ([(MOUSE_POS[0] - self.x) // self.step, (MOUSE_POS[1] - self.y) // self.step])
+            return [(MOUSE_POS[0] - self.x) // self.step, (MOUSE_POS[1] - self.y) // self.step]
         return False
 
     def highlightCells(self, SCREEN, position, color):
@@ -73,8 +72,8 @@ class Grid:
         return self.notCompletedCells
 
     def checkSpace(self, num, space, board):
-        # if not board[space[0]][space[1]] == 0:
-            # return None
+        if not board[space[0]][space[1]] == 0:
+            return None
 
         for col in board[space[0]]:
             if col == num:
@@ -105,7 +104,8 @@ class Grid:
                 else:
                     lst.append(0)
             correct_board.append(lst)
-
+        if correct_board == self.solvedGrid:
+            return None
         num_amn = []
         if len(self.startEmptyCells) == 0:
             rand = random.choice(self.startEmptyCells)
@@ -124,10 +124,10 @@ class Grid:
                     self.hint_amount += 1
                     self.startEmptyCells.remove([row, col])
                     return [row, col]
-                elif len(num_amn) == 0 and len(self.startEmptyCells) > 0:
+                '''elif len(num_amn) == 0 and len(self.startEmptyCells) > 0:
                     rand = random.choice(self.startEmptyCells)
                     self.hint_amount += 1
-                    return rand
+                    return rand'''
 
     def shadeCells(self, SCREEN):
         for cell in self.lockedCells:
