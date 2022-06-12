@@ -1,11 +1,13 @@
 import random, copy
 
 
+# клас, який відповідає за головний алгоритм гри та її логіку
 class Board:
     def __init__(self, code=None):
         self.__resetBoard()
 
-    def boardToCode(self, input_board=None):  # turn a pre-existing board into a code
+    # перетворює матрицю значень на стрічку коду
+    def boardToCode(self, input_board=None):
         if input_board:
             _code = ''.join([str(i) for j in input_board for i in j])
             return _code
@@ -13,7 +15,8 @@ class Board:
             self.code = ''.join([str(i) for j in self.board for i in j])
             return self.code
 
-    def findSpaces(self):  # finds the first empty space in the board; where there is not a number
+    # знаходить позицію першго нульового елементу матриці
+    def findEmptyBox(self):
         for row in range(len(self.board)):
             for col in range(len(self.board[0])):
                 if self.board[row][col] == 0:
@@ -21,37 +24,39 @@ class Board:
 
         return False
 
-    def checkSpace(self, num, space):  # checks to see if a number can be fitted into a specifc space; row, col
-        if not self.board[space[0]][space[1]] == 0:  # check to see if space is a number already
+    # перевіряє чи деяке число(від 1 до 9) підходить на деяку позицію матриці
+    def checkBox(self, num, position):
+        if not self.board[position[0]][position[1]] == 0:  # перевіряє чи клітинка вже заповнена
             return False
 
-        for col in self.board[space[0]]:  # check to see if number is already in row
+        for col in self.board[position[0]]:  # перевіряє чи є це деяке число в рядку
             if col == num:
                 return False
 
-        for row in range(len(self.board)):  # check to see if number is already in column
-            if self.board[row][space[1]] == num:
+        for row in range(len(self.board)):  # перевіряє чи є це деяке число в колонці
+            if self.board[row][position[1]] == num:
                 return False
 
-        _internalBoxRow = space[0] // 3
-        _internalBoxCol = space[1] // 3
+        _internalBoxRow = position[0] // 3
+        _internalBoxCol = position[1] // 3
 
-        for i in range(3):  # check to see if internal box already has number
+        for i in range(3):  # перевіряє чи є це деяке число в меншому квадраті 3х3
             for j in range(3):
                 if self.board[i + (_internalBoxRow * 3)][j + (_internalBoxCol * 3)] == num:
                     return False
 
         return True
 
-    def solve(self):  # solves a board using recursion
-        _spacesAvailable = self.findSpaces()
+    # функція рекурсивного вирішення
+    def solve(self):
+        _spacesAvailable = self.findEmptyBox()
 
         if not _spacesAvailable:
             return True
         else:
             row, col = _spacesAvailable
         for n in range(1, 10):
-            if self.checkSpace(n, (row, col)):
+            if self.checkBox(n, (row, col)):
                 self.board[row][col] = n
 
                 if self.solve():
@@ -61,14 +66,13 @@ class Board:
 
         return False
 
-    '''def solveForCode(self):  # solves a board and returns the code of the solved board
-        return self.boardToCode(self.solve())'''
+    # функція генерації початкового поля гри та матриці рішень до нього
+    def createBoards(self, difficulty):
+        self.board, _fullBoard = self.createStartBoard(self.__createRandomFullBoard(), difficulty)
+        return self.board, _fullBoard
 
-    def generateQuestionBoards(self, difficulty):
-        self.board, _solution_board = self.generateQuestionBoard(self.__generateRandomCompleteBoard(), difficulty)
-        return self.board, _solution_board
-
-    def generateQuestionBoard(self, fullBoard, difficulty):  # generates a question board with a certain amount of numbers removed depending on the chosen difficulty
+    # видаляє з повністю заповненої таблиці деяку кількість значень клітинок, базуючись на вибраній складності
+    def createStartBoard(self, fullBoard, difficulty):
         self.board = copy.deepcopy(fullBoard)
 
         if difficulty == "easy":
@@ -122,7 +126,8 @@ class Board:
 
         return self.board, fullBoard
 
-    def __generateRandomCompleteBoard(self):  # generates a brand new completely random board full of numbers
+    # генерує повністю коректно заповену таблицю значень поля гри
+    def __createRandomFullBoard(self):
         self.__resetBoard()
 
         _l = list(range(1, 10))
@@ -145,27 +150,29 @@ class Board:
                 _num = random.choice(_l)
                 self.board[row][col] = _num
                 _l.remove(_num)
+        return self.__finishCreating()
 
-        return self.__generateCont()
-
-    def __generateCont(self):  # uses recursion to finish generating a random board
+    # функція рекурсивного догенерування повністю заповненої таблиці
+    def __finishCreating(self):
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 if self.board[row][col] == 0:
                     _num = random.randint(1, 9)
 
-                    if self.checkSpace(_num, (row, col)):
+                    if self.checkBox(_num, (row, col)):
                         self.board[row][col] = _num
 
                         if self.solve():
-                            self.__generateCont()
+                            self.__finishCreating()
                             return self.board
 
                         self.board[row][col] = 0
 
+
         return False
 
-    def findNumberOfSolutions(self):  # finds the number of solutions to a board and returns the list of solutions
+    # знаходить кількість рішень для деякої напівпорожньої матриці та повертає множину цих значень
+    def findNumberOfSolutions(self):
         _z = 0
         _list_of_solutions = []
 
@@ -177,15 +184,17 @@ class Board:
         for i in range(1, _z + 1):
             _board_copy = copy.deepcopy(self)
 
-            _row, _col = self.__findSpacesToFindNumberOfSolutions(_board_copy.board, i)
+            _row, _col = self.__findEmptyBoxToFindNumberOfSolutions(_board_copy.board, i)
             _board_copy_solution = _board_copy.__solveToFindNumberOfSolutions(_row, _col)
 
             _list_of_solutions.append(self.boardToCode(input_board=_board_copy_solution))
+            if len(list(set(_list_of_solutions))) > 1:
+                break
 
         return list(set(_list_of_solutions))
 
-    def __findSpacesToFindNumberOfSolutions(self, board,
-                                            num):  # finds the first empty space it comes across, is used within the findNumberOfSolutions method
+    # знаходить деякий за номером нульовий елемент матриці
+    def __findEmptyBoxToFindNumberOfSolutions(self, board, num):
         _k = 1
         for row in range(len(board)):
             for col in range(len(board[row])):
@@ -197,10 +206,10 @@ class Board:
 
         return False
 
-    def __solveToFindNumberOfSolutions(self, row,
-                                       col):  # solves the board using recursion, is used within the findNumberOfSolutions method
+    # вирішує деякую напівпорожню матрицю задля знаходження кількості її розв'язків
+    def __solveToFindNumberOfSolutions(self, row, col):
         for n in range(1, 10):
-            if self.checkSpace(n, (row, col)):
+            if self.checkBox(n, (row, col)):
                 self.board[row][col] = n
 
                 if self.solve():
@@ -210,6 +219,7 @@ class Board:
 
         return False
 
-    def __resetBoard(self):  # resets the board to an empty state
+    # повністю обнуляє матрицю
+    def __resetBoard(self):
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         return self.board

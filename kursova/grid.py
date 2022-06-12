@@ -2,6 +2,7 @@ import pygame, random
 from constants import BLUISH, BEIGE, GOLDEN, SHADE
 
 
+# клас, який відповідає за все, що відбувається на полі гри
 class Grid:
     def __init__(self, SCREEN, numbers, x, y, hint_amount=0):
         self.SCREEN = SCREEN
@@ -16,9 +17,10 @@ class Grid:
         self.unsolvedGrid = numbers[0]
         self.hint_amount = hint_amount
         self.notCompletedCells = []
-        self.lock()
-        self.fileInput()
+        self.__lock()
+        self.files = self.fileInput()
 
+    # намалювати порожнє поле гри
     def draw_grid(self):
         pygame.draw.rect(self.SCREEN, BLUISH, pygame.Rect(self.x, self.y, self.height, self.width), 2)
 
@@ -33,16 +35,19 @@ class Grid:
             else:
                 pygame.draw.line(self.SCREEN, BLUISH, (self.x, y), (self.x + self.width - 1, y), 1)
 
+    # перевірити чи знаходиться курсор мишки над полем гри
     def isOnTheGrid(self, MOUSE_POS):
         if MOUSE_POS[0] in range(self.x, self.x + self.width) and MOUSE_POS[1] in range(self.y, self.y + self.height):
             return [(MOUSE_POS[0] - self.x) // self.step, (MOUSE_POS[1] - self.y) // self.step]
         return False
 
+    # виділяти сірим кольором вибрану клітинку
     def highlightCells(self, SCREEN, position, color):
         pygame.draw.rect(SCREEN, color,
                          ((position[0] * self.step) + self.x, (position[1] * self.step) + self.y, self.step, self.step))
 
-    def lock(self):
+    # стоврити колекцію початково заповнених клітинок та початково незаповнених
+    def __lock(self):
         for yidx, row in enumerate(self.unsolvedGrid):
             for xidx, num in enumerate(row):
                 if num != 0:
@@ -50,12 +55,13 @@ class Grid:
                 else:
                     self.startEmptyCells.append([xidx, yidx])
 
+    # запис у файл початкового поля та матриці рішень
     def fileInput(self):
         code = self.boardToCode(self.unsolvedGrid)
         cd = self.boardToCode(self.solvedGrid)
-        with open("input.txt", "w") as file:
-            file.write(code + '\n' + cd)
+        return code, cd
 
+    # перетворення матриці у стрічку значень кожного елементу
     def boardToCode(self, brd):
         code = ''
         for row in range(9):
@@ -63,6 +69,7 @@ class Grid:
                 code += str(brd[row][col])
         return code
 
+    # створення лісту поточно незаповненних клітинок
     def notComplettedCells(self, code):
         self.notCompletedCells = []
         for yidx, row in enumerate(code):
@@ -71,6 +78,7 @@ class Grid:
                     self.notCompletedCells.append([xidx, yidx])
         return self.notCompletedCells
 
+    # функція перевірки на коректність деякого значення на деякій позиції
     def checkSpace(self, num, space, board):
         if not board[space[0]][space[1]] == 0:
             return None
@@ -93,8 +101,9 @@ class Grid:
 
         return num
 
+    # функція логічного знаходження найбільш вакантної позиції для виводу підказки
     def solve(self, board):
-
+        correctEmptyCells = []
         correct_board = []
         for i in range(9):
             lst = []
@@ -102,43 +111,49 @@ class Grid:
                 if board[i][j] == self.solvedGrid[i][j]:
                     lst.append(board[i][j])
                 else:
+                    correctEmptyCells.append([j, i])
                     lst.append(0)
             correct_board.append(lst)
         if correct_board == self.solvedGrid:
+            # print(correct_board)
+            # print(self.solvedGrid)
             return None
         num_amn = []
-        if len(self.startEmptyCells) == 0:
+        '''if len(self.startEmptyCells) == 0:
             rand = random.choice(self.startEmptyCells)
             self.hint_amount += 1
             return rand
-        else:
-            for i in range(len(self.startEmptyCells)):
-                row, col = self.startEmptyCells[i]
-                for n in range(1, 10):
-                    if self.checkSpace(n, (col, row), correct_board):
-                        num_amn.append(n)
-                if len(num_amn) > 1 or len(num_amn) == 0:
-                    num_amn = []
-                elif len(num_amn) == 1:
-                    board[col][row] = num_amn[0]
-                    self.hint_amount += 1
-                    self.startEmptyCells.remove([row, col])
-                    return [row, col]
-                '''elif len(num_amn) == 0 and len(self.startEmptyCells) > 0:
+        else:'''
+        for i in range(len(correctEmptyCells)):
+            _row, _col = correctEmptyCells[i]
+            for n in range(1, 10):
+                if self.checkSpace(n, (_col, _row), correct_board):
+                    num_amn.append(n)
+            if len(num_amn) > 1 or len(num_amn) == 0:
+                num_amn = []
+            elif len(num_amn) == 1:
+                board[_col][_row] = num_amn[0]
+                self.hint_amount += 1
+                correctEmptyCells.remove([_row, _col])
+                return [_row, _col]
+            '''elif len(num_amn) == 0 and len(self.startEmptyCells) > 0:
                     rand = random.choice(self.startEmptyCells)
                     self.hint_amount += 1
                     return rand'''
 
+    # зафарбування початково даних значень сірим кольором
     def shadeCells(self, SCREEN):
         for cell in self.lockedCells:
             pygame.draw.rect(SCREEN, SHADE,
                              (cell[0] * self.step + self.x, cell[1] * self.step + self.y, self.step, self.step))
 
+    # зафарбування деяких клітинок деяким кольором
     def colorCells(self, SCREEN, color, solvedCells):
         for cell in solvedCells:
             pygame.draw.rect(SCREEN, color,
                              (cell[0] * self.step + self.x, cell[1] * self.step + self.y, self.step, self.step))
 
+    # виділення позиції виводу підказки зеленим кольором
     def hint(self, SCREEN, position, code):
         for pos in position:
             code[pos[1]][pos[0]] = self.solvedGrid[pos[1]][pos[0]]
@@ -146,14 +161,16 @@ class Grid:
             pygame.draw.rect(SCREEN, "#65C793",
                              (pos[0] * self.step + self.x, pos[1] * self.step + self.y, self.step, self.step))
 
-    def numbers(self, SCREEN, number, position):
+    # ініціалізація розміру та шрифту цифр
+    def __numbers(self, SCREEN, number, position):
         fnt = pygame.font.Font("assets/arial.ttf", 45)
         num = fnt.render(number, True, BLUISH)
         SCREEN.blit(num, position)
 
+    # вивід на екран чисел
     def drawNumbers(self, SCREEN, code):
         for yidx, row in enumerate(code):
             for xidx, num in enumerate(row):
                 if num != 0:
                     position = [xidx * self.step + self.x + self.step // 4, yidx * self.step + self.y]
-                    self.numbers(SCREEN, str(num), position)
+                    self.__numbers(SCREEN, str(num), position)
